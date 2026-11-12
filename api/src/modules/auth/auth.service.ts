@@ -17,6 +17,7 @@ const dto = (u: any) => ({
   fullName: u.fullName,
   email: u.email,
   role: u.role,
+  avatarUrl: u.avatarUrl,
 });
 
 @Injectable()

@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
@@ -9,11 +10,17 @@ import { Env } from '../../config/env';
 
 @Injectable()
 export class MediaService {
+  private readonly isConfigured: boolean;
+
   constructor(cfg: ConfigService<Env, true>) {
+    const cloudName = cfg.get('CLOUDINARY_CLOUD_NAME');
+    const apiKey = cfg.get('CLOUDINARY_API_KEY');
+    const apiSecret = cfg.get('CLOUDINARY_API_SECRET');
+    this.isConfigured = Boolean(cloudName && apiKey && apiSecret);
     cloudinary.config({
-      cloud_name: cfg.get('CLOUDINARY_CLOUD_NAME'),
-      api_key: cfg.get('CLOUDINARY_API_KEY'),
-      api_secret: cfg.get('CLOUDINARY_API_SECRET'),
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
       secure: true, // secrets stay on the server
     });
   }
@@ -36,6 +43,11 @@ export class MediaService {
     folder: string,
     priv = false,
   ): Promise<{ url: string; publicId: string }> {
+    if (!this.isConfigured) {
+      throw new ServiceUnavailableException(
+        'Image uploads are unavailable. Configure Cloudinary credentials on the server.',
+      );
+    }
     this.assertImage(buffer);
     return new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(

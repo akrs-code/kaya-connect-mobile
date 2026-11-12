@@ -17,6 +17,8 @@ export const UserSchema = new Schema(
       enum: ['active', 'suspended', 'deactivated'],
       default: 'active',
     },
+    avatarUrl: { type: String },
+    avatarPublicId: { type: String },
     accountAppeal: {
       status: { type: String, enum: ['pending', 'upheld', 'reinstated'] },
       reason: { type: String, maxlength: 500 },

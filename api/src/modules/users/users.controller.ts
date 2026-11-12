@@ -66,6 +66,15 @@ export class UsersController {
     return this.svc.upsertProfile(uid, b);
   }
 
+  @Post('me/avatar')
+  @UseInterceptors(ImageUpload())
+  uploadAvatar(
+    @CurrentUser('id') uid: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.svc.uploadAvatar(uid, file);
+  }
+
   @Post('me/portfolio')
   @UseInterceptors(ImageUpload())
   addPortfolio(

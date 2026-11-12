@@ -28,6 +28,7 @@ export class UsersService {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      avatarUrl: user.avatarUrl,
       profile,
     };
   }
@@ -62,15 +63,29 @@ export class UsersService {
     );
   }
 
+  async uploadAvatar(userId: string, file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Image is required');
+    const user = await this.users.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    const image = await this.media.uploadImage(file.buffer, 'avatars');
+    const previousPublicId = user.avatarPublicId;
+    user.avatarUrl = image.url;
+    user.avatarPublicId = image.publicId;
+    await user.save();
+    if (previousPublicId) await this.media.destroyImage(previousPublicId);
+    return { avatarUrl: user.avatarUrl };
+  }
+
   async getPublicProfile(id: string) {
     const user = await this.users
       .findOne({ _id: id, accountStatus: { $ne: 'suspended' } })
-      .select('fullName createdAt');
+      .select('fullName createdAt avatarUrl');
     const p: any = await this.profiles.findOne({ user: id }).lean();
     if (!user || !p) throw new NotFoundException('User not found');
     return {
       id,
       fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
       memberSince: user.createdAt,
       biography: p.biography,
       skills: p.skills,
