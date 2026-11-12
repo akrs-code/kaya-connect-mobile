@@ -29,6 +29,7 @@ export class AssignmentsService {
     @InjectModel('Assignment') private assignments: Model<any>,
     @InjectModel('AgreementEvent') private events: Model<any>,
     @InjectModel('Opportunity') private opps: Model<any>,
+    @InjectModel('Conversation') private conversations: Model<any>,
     private audit: AuditService,
     private notifications: NotificationsService,
   ) {}
@@ -49,7 +50,12 @@ export class AssignmentsService {
       .lean();
   }
   async getOne(id: string, uid: string) {
-    return (await this.load(id, uid)).populate('opportunity', 'title');
+    const assignment = await (await this.load(id, uid)).populate('opportunity', 'title');
+    const conversation: any = await this.conversations
+      .findOne({ assignment: id, participants: uid })
+      .select('_id')
+      .lean();
+    return { ...assignment.toObject(), conversationId: conversation?._id?.toString() };
   }
   async agreementHistory(id: string, uid: string) {
     await this.load(id, uid);

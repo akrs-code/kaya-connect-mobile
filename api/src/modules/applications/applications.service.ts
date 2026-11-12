@@ -17,11 +17,15 @@ export class ApplicationsService {
     @InjectModel('Opportunity') private opps: Model<any>,
     @InjectModel('Assignment') private assignments: Model<any>,
     @InjectModel('Conversation') private conversations: Model<any>,
+    @InjectModel('Profile') private profiles: Model<any>,
     private audit: AuditService,
     private notifications: NotificationsService,
   ) {}
 
   async apply(oppId: string, providerId: string, message?: string) {
+    const profile: any = await this.profiles.findOne({ user: providerId }).select('intent').lean();
+    if (profile?.intent === 'requester')
+      throw new ForbiddenException('Poster-only accounts cannot apply for listings');
     const opp = await this.opps.findById(oppId);
     if (!opp || opp.status !== 'published')
       throw new ConflictException('Listing is not open for applications');
@@ -46,12 +50,23 @@ export class ApplicationsService {
     return app;
   }
 
-  mine(providerId: string) {
-    return this.apps
+  async mine(providerId: string) {
+    const applications = await this.apps
       .find({ provider: providerId })
       .populate('opportunity', 'title status schedule')
       .sort({ createdAt: -1 })
       .lean();
+    const assignments = await this.assignments
+      .find({ provider: providerId, application: { $in: applications.map((app: any) => app._id) } })
+      .select('application')
+      .lean();
+    const assignmentByApplication = new Map(
+      assignments.map((assignment: any) => [assignment.application.toString(), assignment._id.toString()]),
+    );
+    return applications.map((application: any) => ({
+      ...application,
+      assignmentId: assignmentByApplication.get(application._id.toString()),
+    }));
   }
 
   async withdraw(id: string, providerId: string) {

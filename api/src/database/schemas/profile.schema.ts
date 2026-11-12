@@ -9,6 +9,7 @@ export const ProfileSchema = new Schema(
       unique: true,
     },
     biography: { type: String, maxlength: 500, default: '' },
+    intent: { type: String, enum: ['provider', 'requester', 'both'], default: 'both' },
     skills: [{ type: String, trim: true, lowercase: true, maxlength: 40 }],
     experience: [{ title: String, description: String, years: Number }],
     availability: [

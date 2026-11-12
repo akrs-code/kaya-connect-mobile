@@ -20,6 +20,7 @@ export class OpportunitiesService {
     @InjectModel('Opportunity') private opps: Model<any>,
     @InjectModel('Category') private cats: Model<any>,
     @InjectModel('Application') private apps: Model<any>,
+    @InjectModel('Profile') private profiles: Model<any>,
     private notifications: NotificationsService,
   ) {}
 
@@ -37,6 +38,9 @@ export class OpportunitiesService {
   }
 
   async create(userId: string, { publish, ...d }: any) {
+    const profile: any = await this.profiles.findOne({ user: userId }).select('intent').lean();
+    if (profile?.intent === 'provider')
+      throw new BadRequestException('Side-hustler-only accounts cannot create listings');
     this.assertRules(d);
     await this.assertCategory(d.category);
     return this.opps.create({
@@ -83,7 +87,12 @@ export class OpportunitiesService {
       .populate('requester', 'fullName')
       .lean();
     const isOwner = o && o.requester._id.toString() === userId;
-    if (!o || (o.status !== 'published' && !isOwner))
+    const isSelectedProvider = o && await this.apps.exists({
+      opportunity: o._id,
+      provider: userId,
+      status: 'selected',
+    });
+    if (!o || (o.status !== 'published' && !isOwner && !isSelectedProvider))
       throw new NotFoundException('Opportunity not found');
     return o;
   }

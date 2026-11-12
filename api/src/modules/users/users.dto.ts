@@ -6,6 +6,7 @@ export const updateMeSchema = z.object({
 });
 export const profileSchema = z
   .object({
+    intent: z.enum(['provider', 'requester', 'both']),
     biography: z.string().trim().max(500),
     skills: z.array(z.string().trim().toLowerCase().min(1).max(40)).max(30),
     experience: z
