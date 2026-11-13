@@ -21,6 +21,7 @@ export class AdminService {
     @InjectModel('Review') private reviews: Model<any>,
     @InjectModel('Assignment') private assignments: Model<any>,
     @InjectModel('AuditEvent') private events: Model<any>,
+    @InjectModel('Category') private categoryModel: Model<any>,
     private audit: AuditService,
     private auth: AuthService,
     private categories: CategoriesService,
@@ -349,19 +350,44 @@ export class AdminService {
     await this.audit.log(adminId, 'category.created', 'category', c._id);
     return c;
   }
+  async listCategories() {
+    return this.categoryModel.find().sort({ name: 1 }).lean();
+  }
   async updateCategory(adminId: string, id: string, d: object) {
     const c = await this.categories.update(id, d);
     await this.audit.log(adminId, 'category.updated', 'category', id, d);
     return c;
   }
-  auditEvents(q: { page: number; limit: number }) {
+  async auditEvents(q: {
+    page: number;
+    limit: number;
+    eventType?: string;
+    search?: string;
+    days?: number;
+  }) {
     const { skip, limit } = paginate(q);
-    return this.events
-      .find()
+    const filter: Record<string, unknown> = {};
+    if (q.eventType) filter.eventType = q.eventType;
+    if (q.days) {
+      filter.createdAt = { $gte: new Date(Date.now() - q.days * 24 * 60 * 60 * 1000) };
+    }
+    if (q.search) {
+      const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$or = [
+        { eventType: { $regex: escaped, $options: 'i' } },
+        { targetType: { $regex: escaped, $options: 'i' } },
+      ];
+    }
+    const [items, total] = await Promise.all([
+      this.events
+      .find(filter)
       .populate('actor', 'fullName')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .lean(),
+      this.events.countDocuments(filter),
+    ]);
+    return { items, total };
   }
 }

@@ -34,6 +34,12 @@ export const appealDecisionSchema = z.object({
   decision: z.enum(['reinstate', 'uphold']),
   note: z.string().trim().min(5).max(300),
 });
+
+export const auditEventsQuery = pageQuery.extend({
+  eventType: z.string().trim().min(1).max(80).optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+  days: z.coerce.number().int().min(1).max(365).optional(),
+});
 export const categoryCreateSchema = z.object({
   name: z.string().trim().min(2).max(60),
 });

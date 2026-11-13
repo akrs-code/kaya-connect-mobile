@@ -16,6 +16,7 @@ import {
   categoryCreateSchema,
   categoryUpdateSchema,
   adminAssignmentsQuery,
+  auditEventsQuery,
   adminOpportunitiesQuery,
   adminReviewsQuery,
   appealDecisionSchema,
@@ -134,6 +135,11 @@ export class AdminController {
     return this.s.createCategory(uid, b.name);
   }
 
+  @Get('categories')
+  categories() {
+    return this.s.listCategories();
+  }
+
   @Patch('categories/:id')
   updateCategory(
     @Param('id', ObjectIdPipe) id: string,
@@ -144,7 +150,7 @@ export class AdminController {
   }
 
   @Get('audit-events')
-  audit(@Query(new ZodPipe(pageQuery)) q: any) {
+  audit(@Query(new ZodPipe(auditEventsQuery)) q: any) {
     return this.s.auditEvents(q);
   }
 }
