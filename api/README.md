@@ -20,9 +20,10 @@ Swagger UI is available at `/docs` (for example, `http://localhost:5000/docs`), 
 
 ## Opportunity discovery
 
-The API supports published-opportunity browsing, keyword search, and filters through `GET /api/v1/opportunities`. Requesters can review applications through the applications endpoints. Rule-based recommendation endpoints have been retired: `GET /api/v1/recommendations/opportunities` and `GET /api/v1/opportunities/:id/recommended-providers` return 404. React Native clients should use browsing/search and application review instead.
-
-This changes the documented product scope. Before claiming conformance with the supplied SRD, revise FR-013, FR-014, NFR-003, and their traceability entries to reflect that recommendations are out of scope.
+The API supports published-opportunity browsing, keyword search, and filters
+through `GET /api/v1/opportunities`. Requesters can review applications through
+the applications endpoints. Discovery is intentionally limited to browsing,
+search, and filters; it does not include automated suggestions or ranking.
 
 ## Admin moderation
 
